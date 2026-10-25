@@ -1,0 +1,58 @@
+
+import random
+
+def tempGenerator():
+    temp = random.uniform(5.0, 50.0)
+    print(f"Outside temperature: {temp:.2f}°C")
+    return temp
+
+while True:
+    outside_temp = tempGenerator()
+
+    no_people = int(input("Enter number of people: "))
+    hour = int(input("Enter hour of the day (0-23): "))
+
+    # AC ON / OFF
+    if outside_temp <= 26:
+        ac_status = "OFF"
+    else:
+        ac_status = "ON"
+
+    # Default recommendation
+    ac_temp = 25
+
+    # Hot weather
+    if outside_temp > 38:
+        ac_temp = 21
+    elif outside_temp > 34:
+        ac_temp = 22
+    elif outside_temp > 30:
+        ac_temp = 23
+    else:
+        ac_temp = 26
+
+    # More people make the room hotter
+    if no_people >= 11:
+        ac_temp -= 3
+    elif no_people >= 8:
+        ac_temp -= 2
+    elif no_people >= 5:
+        ac_temp -= 1
+
+    # Night time
+    if hour >= 22 or hour <= 7:
+        ac_temp += 3
+
+    print("\n------ Smart AC Recommendation ------")
+    print(f"AC Status       : {ac_status}")
+
+    if ac_status == "ON":
+        print(f"Recommended AC Temp : {ac_temp}°C")
+    else:
+        print("Recommended AC Temp : AC is OFF (Weather is comfortable)")
+
+    choice = input("\nCheck for another room? (y/n): ")
+
+    if choice == 'n':
+        print("Closed Smart Home Recommendation")
+        break

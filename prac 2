@@ -1,0 +1,281 @@
+
+from collections import deque
+import time
+
+# TAKE MAZE INPUT FROM USER
+def input_maze():
+    rows = int(input("Enter number of rows: "))
+    cols = int(input("Enter number of columns: "))
+
+    maze = []
+
+    print("\nEnter the maze:")
+    print("Use S = Start, G = Goal, . = Open path, # = Blocked")
+    print("Example: S..#...")
+
+    for i in range(rows):
+        while True:
+            row = input(f"Enter row {i + 1}: ")
+
+            if len(row) == cols:
+                maze.append(list(row))
+                break
+            else:
+                print(f"Please enter exactly {cols} characters.")
+
+    return maze
+
+
+# FIND START AND GOAL
+def find_positions(maze):
+    start = None
+    goal = None
+
+    for i in range(len(maze)):
+        for j in range(len(maze[0])):
+            if maze[i][j] == 'S':
+                start = (i, j)
+            elif maze[i][j] == 'G':
+                goal = (i, j)
+
+    return start, goal
+
+
+# GET VALID NEIGHBOURS
+def get_neighbors(maze, node):
+    rows = len(maze)
+    cols = len(maze[0])
+
+    r, c = node
+
+    directions = [
+        (-1, 0),  # Up
+        (1, 0),   # Down
+        (0, -1),  # Left
+        (0, 1)    # Right
+    ]
+
+    neighbors = []
+
+    for dr, dc in directions:
+        nr = r + dr
+        nc = c + dc
+
+        # Check boundary
+        if 0 <= nr < rows and 0 <= nc < cols:
+
+            # Check whether cell is not blocked
+            if maze[nr][nc] != '#':
+                neighbors.append((nr, nc))
+
+    return neighbors
+
+
+# RECONSTRUCT PATH
+def reconstruct_path(parent, start, goal):
+    if goal not in parent:
+        return []
+
+    path = []
+    current = goal
+
+    while current is not None:
+        path.append(current)
+
+        if current == start:
+            break
+
+        current = parent[current]
+
+    path.reverse()
+    return path
+
+
+# BFS
+def bfs(maze, start, goal):
+    queue = deque([start])
+    visited = {start}
+    parent = {start: None}
+
+    nodes_explored = 0
+    start_time = time.perf_counter()
+
+    while queue:
+        current = queue.popleft()
+        nodes_explored += 1
+
+        # Goal test
+        if current == goal:
+            break
+
+        # Find neighbours
+        for neighbor in get_neighbors(maze, current):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                parent[neighbor] = current
+                queue.append(neighbor)
+
+    end_time = time.perf_counter()
+
+    path = reconstruct_path(parent, start, goal)
+    execution_time = end_time - start_time
+
+    return path, nodes_explored, execution_time
+
+
+# DFS
+def dfs(maze, start, goal):
+    stack = [start]
+    visited = {start}
+    parent = {start: None}
+
+    nodes_explored = 0
+    start_time = time.perf_counter()
+
+    while stack:
+        current = stack.pop()
+        nodes_explored += 1
+
+        # Goal test
+        if current == goal:
+            break
+
+        # Find neighbours
+        for neighbor in get_neighbors(maze, current):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                parent[neighbor] = current
+                stack.append(neighbor)
+
+    end_time = time.perf_counter()
+
+    path = reconstruct_path(parent, start, goal)
+    execution_time = end_time - start_time
+
+    return path, nodes_explored, execution_time
+
+
+# DISPLAY MAZE
+def display_maze(maze):
+    for row in maze:
+        print(" ".join(row))
+
+
+# DISPLAY PATH
+def display_path(maze, path):
+    result = [row[:] for row in maze]
+
+    for r, c in path:
+        if result[r][c] not in ['S', 'G']:
+            result[r][c] = '*'
+
+    for row in result:
+        print(" ".join(row))
+
+
+# MAIN
+def main():
+    print("=" * 55)
+    print("     BFS AND DFS MAZE NAVIGATION")
+    print("=" * 55)
+
+    # Take maze input
+    maze = input_maze()
+
+    print("\nOriginal Maze:")
+    display_maze(maze)
+
+    # Find start and goal
+    start, goal = find_positions(maze)
+
+    # Check S and G
+    if start is None:
+        print("\nError: Start 'S' not found.")
+        return
+
+    if goal is None:
+        print("\nError: Goal 'G' not found.")
+        return
+
+    print("\nStart Position:", start)
+    print("Goal Position :", goal)
+
+    # BFS
+    bfs_path, bfs_nodes, bfs_time = bfs(
+        maze, start, goal
+    )
+
+    print("\n" + "=" * 55)
+    print("             BFS RESULT")
+    print("=" * 55)
+
+    if bfs_path:
+        print("BFS Path:")
+        print(" -> ".join(map(str, bfs_path)))
+
+        print("\nPath Length :", len(bfs_path))
+        print("Nodes Explored:", bfs_nodes)
+        print("Execution Time: {:.8f} seconds".format(bfs_time))
+
+        print("\nBFS Path in Maze:")
+        display_path(maze, bfs_path)
+    else:
+        print("No path found by BFS.")
+
+    # DFS
+    dfs_path, dfs_nodes, dfs_time = dfs(
+        maze, start, goal
+    )
+
+    print("\n" + "=" * 55)
+    print("               DFS RESULT")
+    print("=" * 55)
+
+    if dfs_path:
+        print("DFS Path:")
+        print(" -> ".join(map(str, dfs_path)))
+
+        print("\nPath Length :", len(dfs_path))
+        print("Nodes Explored:", dfs_nodes)
+        print("Execution Time: {:.8f} seconds".format(dfs_time))
+
+        print("\nDFS Path in Maze:")
+        display_path(maze, dfs_path)
+    else:
+        print("No path found by DFS.")
+
+    # COMPARISON
+    print("\n" + "=" * 55)
+    print("            PERFORMANCE COMPARISON")
+    print("=" * 55)
+
+    print("\n{:<20} {:<15} {:<15}".format(
+        "Metric", "BFS", "DFS"
+    ))
+
+    print("-" * 50)
+
+    print("{:<20} {:<15} {:<15}".format(
+        "Path Length",
+        len(bfs_path) if bfs_path else "No Path",
+        len(dfs_path) if dfs_path else "No Path"
+    ))
+
+    print("{:<20} {:<15} {:<15}".format(
+        "Nodes Explored",
+        bfs_nodes,
+        dfs_nodes
+    ))
+
+    print("{:<20} {:<15.8f} {:<15.8f}".format(
+        "Time (seconds)",
+        bfs_time,
+        dfs_time
+    ))
+
+    print("\n" + "=" * 55)
+
+
+# RUN PROGRAM
+if __name__ == "__main__":
+    main()

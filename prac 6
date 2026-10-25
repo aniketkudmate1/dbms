@@ -1,0 +1,116 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score,
+    f1_score, confusion_matrix, ConfusionMatrixDisplay
+)
+
+# Load dataset
+data = load_breast_cancer(as_frame=True)
+df = data.frame
+
+print("First 5 rows:")
+print(df.head())
+
+print("\nDataset Shape:")
+print(df.shape)
+
+print("\nMissing Values:")
+print(df.isnull().sum().sum())
+
+print("\nClass Distribution:")
+print(df["target"].value_counts())
+
+X = df.drop("target", axis=1)
+y = df["target"]
+
+# Split dataset
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.20,
+    random_state=42,
+    stratify=y
+)
+
+# Feature scaling
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Logistic Regression
+logistic = LogisticRegression(max_iter=1000)
+logistic.fit(X_train_scaled, y_train)
+log_pred = logistic.predict(X_test_scaled)
+
+print("\nLOGISTIC REGRESSION")
+print("Accuracy:", accuracy_score(y_test, log_pred))
+print("Precision:", precision_score(y_test, log_pred))
+print("Recall:", recall_score(y_test, log_pred))
+print("F1-Score:", f1_score(y_test, log_pred))
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, log_pred))
+
+# KNN
+knn = KNeighborsClassifier(n_neighbors=5)
+knn.fit(X_train_scaled, y_train)
+knn_pred = knn.predict(X_test_scaled)
+
+print("\nKNN (K=5)")
+print("Accuracy:", accuracy_score(y_test, knn_pred))
+print("Precision:", precision_score(y_test, knn_pred))
+print("Recall:", recall_score(y_test, knn_pred))
+print("F1-Score:", f1_score(y_test, knn_pred))
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, knn_pred))
+
+# Model comparison
+results = pd.DataFrame({
+    "Model": ["Logistic Regression", "KNN (K=5)"],
+    "Accuracy": [
+        accuracy_score(y_test, log_pred),
+        accuracy_score(y_test, knn_pred)
+    ],
+    "Precision": [
+        precision_score(y_test, log_pred),
+        precision_score(y_test, knn_pred)
+    ],
+    "Recall": [
+        recall_score(y_test, log_pred),
+        recall_score(y_test, knn_pred)
+    ],
+    "F1-Score": [
+        f1_score(y_test, log_pred),
+        f1_score(y_test, knn_pred)
+    ]
+})
+
+print("\nMODEL COMPARISON")
+print(results.round(4).to_string(index=False))
+
+# Confusion matrices
+log_cm = confusion_matrix(y_test, log_pred)
+knn_cm = confusion_matrix(y_test, knn_pred)
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+ConfusionMatrixDisplay(log_cm).plot(
+    ax=axes[0], colorbar=False
+)
+axes[0].set_title("Logistic Regression")
+
+ConfusionMatrixDisplay(knn_cm).plot(
+    ax=axes[1], colorbar=False
+)
+axes[1].set_title("KNN (K=5)")
+
+plt.tight_layout()
+plt.savefig("confusion_matrix.png")
+
+print("\nConfusion matrix saved as confusion_matrix.png")
+plt.show()

@@ -1,0 +1,94 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+    classification_report
+)
+
+# Load dataset
+data = load_iris(as_frame=True)
+X = data.data
+y = data.target
+
+print(X.head())
+print("Shape:", X.shape)
+print("Missing values:", X.isnull().sum().sum())
+
+# Split dataset
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.2,
+    random_state=42,
+    stratify=y
+)
+
+# Create models
+dt = DecisionTreeClassifier(max_depth=3, random_state=42)
+nb = GaussianNB()
+
+# Train models
+dt.fit(X_train, y_train)
+nb.fit(X_train, y_train)
+
+# Predict and compare models
+models = {
+    "Decision Tree": dt,
+    "Naive Bayes": nb
+}
+
+results = []
+
+for name, model in models.items():
+    pred = model.predict(X_test)
+
+    print("\n", name)
+    print(classification_report(y_test, pred, zero_division=0))
+    print("Confusion Matrix:\n", confusion_matrix(y_test, pred))
+
+    results.append([
+        name,
+        accuracy_score(y_test, pred)
+    ])
+
+# Display accuracy comparison
+df = pd.DataFrame(results, columns=["Model", "Accuracy"])
+
+print("\nModel Comparison:")
+print(df)
+
+# Display Decision Tree
+plt.figure(figsize=(12, 6))
+
+plot_tree(
+    dt,
+    feature_names=X.columns,
+    class_names=data.target_names,
+    filled=True
+)
+
+plt.show()
+
+# Display confusion matrices
+fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+
+for a, (name, model) in zip(ax, models.items()):
+    ConfusionMatrixDisplay.from_estimator(
+        model,
+        X_test,
+        y_test,
+        display_labels=data.target_names,
+        ax=a,
+        colorbar=False
+    )
+
+    a.set_title(name)
+
+plt.tight_layout()
+plt.show()

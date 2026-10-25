@@ -1,0 +1,77 @@
+# Facts
+facts = {"fever", "cough", "fatigue"}
+
+# Rules
+rules = [
+    (["fever", "cough"], "flu_like"),
+    (["flu_like", "fatigue"], "rest_recommended"),
+    (["fever", "rash"], "consult_advisor")
+]
+
+
+# Forward Chaining
+def forward_chaining(goal):
+    known = set(facts)
+
+    while True:
+        changed = False
+
+        for conditions, result in rules:
+            if result not in known and all(c in known for c in conditions):
+                known.add(result)
+                print(conditions, "->", result)
+                changed = True
+
+                if result == goal:
+                    return True
+
+        if not changed:
+            break
+
+    return goal in known
+
+
+# Backward Chaining
+def backward_chaining(goal):
+    if goal in facts:
+        print("FACT:", goal)
+        return True
+
+    for conditions, result in rules:
+        if result == goal:
+            print("RULE:", conditions, "->", result)
+
+            for condition in conditions:
+                if not backward_chaining(condition):
+                    return False
+
+            print(conditions, "->", goal)
+            return True
+
+    return False
+
+
+# Main Program
+print("1. Forward Chaining")
+print("2. Backward Chaining")
+
+choice = int(input("Enter choice: "))
+goal = input("Enter goal: ")
+
+match choice:
+    case 1:
+        print("\nForward Chaining:")
+        if forward_chaining(goal):
+            print("PROVED")
+        else:
+            print("NOT PROVED")
+
+    case 2:
+        print("\nBackward Chaining:")
+        if backward_chaining(goal):
+            print("PROVED")
+        else:
+            print("NOT PROVED")
+
+    case _:
+        print("Invalid choice!")
